@@ -199,6 +199,8 @@ function PlaybackCursor({
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!timelineRef.current || !onSeek) return;
+      // don't attempt to seek when we don't know the duration yet
+      if (videoDurationMs <= 0 || !isFinite(videoDurationMs)) return;
 
       const rect = timelineRef.current.getBoundingClientRect();
       const clickX = e.clientX - rect.left - sidebarWidth;
@@ -441,7 +443,7 @@ function Timeline({
   }, [setTimelineRef]);
 
   const handleTimelineClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!onSeek || videoDurationMs <= 0) return;
+    if (!onSeek || videoDurationMs <= 0 || !isFinite(videoDurationMs)) return;
 
     // Only clear selection if clicking on empty space (not on items)
     // This is handled by event propagation - items stop propagation

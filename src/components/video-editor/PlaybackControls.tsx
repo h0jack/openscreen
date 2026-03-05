@@ -25,10 +25,17 @@ export default function PlaybackControls({
   }
 
   function handleSeekChange(e: React.ChangeEvent<HTMLInputElement>) {
-    onSeek(parseFloat(e.target.value));
+    const raw = parseFloat(e.target.value);
+    if (!isFinite(raw) || isNaN(raw) || raw < 0) {
+      return;
+    }
+    // clamp to duration in case the input range was temporarily out-of-sync
+    const safe = duration > 0 ? Math.min(raw, duration) : raw;
+    onSeek(safe);
   }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const sliderMax = duration > 0 ? duration : 0;
 
   return (
     <div className="flex items-center gap-2 px-1 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 shadow-xl transition-all duration-300 hover:bg-black/70 hover:border-white/20">
@@ -67,10 +74,11 @@ export default function PlaybackControls({
         <input
           type="range"
           min="0"
-          max={duration || 100}
+          max={sliderMax}
           value={currentTime}
           onChange={handleSeekChange}
           step="0.01"
+          disabled={duration <= 0}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
         

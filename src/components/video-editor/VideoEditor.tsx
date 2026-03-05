@@ -1,5 +1,3 @@
-
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
@@ -439,7 +437,35 @@ export default function VideoEditor() {
   function handleSeek(time: number) {
     const video = videoPlaybackRef.current?.video;
     if (!video) return;
-    video.currentTime = time;
+
+    // guard against bad values coming from the UI (NaN, infinite, negative)
+    if (!isFinite(time) || isNaN(time) || time < 0) {
+      return;
+    }
+
+    const dur = video.duration;
+    // if we don't yet know the duration, don't attempt to seek; seeking early
+    // was triggering media error events for some files.
+    if (!isFinite(dur) || dur <= 0) {
+      return;
+    }
+
+    // clamp to video duration if we know it; this avoids seeking past end which
+    // sometimes provokes a media error event in some browsers/embedders.
+    if (time > dur) {
+      time = dur;
+    }
+
+    try {
+      video.currentTime = time;
+      // clear any previous error message when we successfully seek
+      setError(null);
+    } catch (err) {
+      // some browsers will throw if you try to set currentTime too early
+      // ignore the exception - error event is also fired in that case and
+      // handled elsewhere.
+      console.warn('seek failed', err);
+    }
   }
 
   const handleSelectZoom = useCallback((id: string | null) => {
